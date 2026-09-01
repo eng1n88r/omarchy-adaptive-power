@@ -24,9 +24,15 @@ via a scoped sudoers grant that the daemon's installer sets up.
    sudo make install
    ```
 
-On hardware without kernel charge thresholds the adaptive section hides
-itself and the panel behaves as the stock battery widget. With supported
-hardware but no daemon, the section shows "daemon not installed".
+The plugin is useful at every level of setup:
+
+- **No kernel charge thresholds** (hardware unsupported): the adaptive section
+  hides itself; you get the stock battery panel.
+- **Supported hardware, no daemon**: standalone mode — the presets set a
+  static charge limit by writing the kernel threshold via `pkexec` (Omarchy's
+  polkit agent shows an auth dialog per change).
+- **Daemon installed**: full adaptive mode — schedule learning, pre-unplug
+  top-ups, on/off switch, and no password prompts (scoped sudoers grant).
 
 ## Install
 

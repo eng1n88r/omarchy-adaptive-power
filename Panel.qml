@@ -125,8 +125,15 @@ Panel {
   property bool adaptiveError: false
 
   // What adaptive charging is doing right now, in words.
+  // Without the daemon the hold value IS the live kernel threshold.
+  readonly property int displayedHold: {
+    if (adaptiveDaemon) return holdCeiling
+    var live = parseInt(adaptiveCeiling, 10)
+    return isNaN(live) ? 80 : live
+  }
+
   readonly property string adaptiveStatusText: {
-    if (!adaptiveDaemon) return "daemon not installed - see plugin README"
+    if (!adaptiveDaemon) return "static limit - daemon adds adaptive charging"
     if (!adaptiveActive) return "stopped"
     var live = parseInt(adaptiveCeiling, 10)
     if (isNaN(live)) return "holding at " + holdCeiling + "%"
@@ -209,7 +216,16 @@ Panel {
 
   function setCeiling(value) {
     if (adaptiveToggleProc.running) return
-    adaptiveToggleProc.command = ["sudo", "-n", "adaptive-charge", "ceiling", String(value)]
+    var n = parseInt(value, 10)
+    if (isNaN(n) || n < 50 || n > 100) return
+    if (adaptiveDaemon) {
+      adaptiveToggleProc.command = ["sudo", "-n", "adaptive-charge", "ceiling", String(n)]
+    } else {
+      // Standalone mode: write the kernel threshold directly. Omarchy's
+      // polkit agent presents the auth dialog; cancelling is a clean no-op.
+      adaptiveToggleProc.command = ["pkexec", "/bin/sh", "-c",
+        "for f in /sys/class/power_supply/BAT*/charge_control_end_threshold; do echo " + n + " > \"$f\"; done"]
+    }
     adaptiveToggleProc.running = true
   }
 
@@ -594,6 +610,7 @@ Panel {
 
             ToggleSwitch {
               id: adaptiveSwitch
+              visible: root.adaptiveDaemon
               checked: root.adaptiveActive
               busy: adaptiveToggleProc.running
               foreground: root.bar.foreground
@@ -612,7 +629,7 @@ Panel {
             width: parent.width
             spacing: Style.spacing.labelGap
             InfoPair { label: "Status"; value: root.adaptiveStatusText }
-            InfoPair { label: "Hold level"; value: root.holdCeiling + "%" }
+            InfoPair { label: "Hold level"; value: root.displayedHold + "%" }
           }
 
           Row {
@@ -633,7 +650,7 @@ Panel {
                 horizontalPadding: Style.spacing.controlPaddingX
                 verticalPadding: Style.spacing.controlPaddingY
                 bordered: true
-                active: root.holdCeiling === modelData
+                active: root.displayedHold === modelData
                 onClicked: root.setCeiling(modelData)
               }
             }
@@ -644,7 +661,7 @@ Panel {
             width: parent.width
             wrapMode: Text.WordWrap
             textFormat: Text.PlainText
-            text: "\u26a0 Last action was refused - rerun: sudo make install"
+            text: root.adaptiveDaemon ? "\u26a0 Action refused - is the sudoers grant installed? (sudo make install)" : "\u26a0 Action failed or was cancelled"
             color: root.bar.foreground
             opacity: 0.8
             font.family: root.bar.fontFamily
