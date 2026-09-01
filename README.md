@@ -20,10 +20,7 @@ via a scoped sudoers grant that the daemon's installer sets up.
    prebuilt release as a pacman package):
 
    ```sh
-   git clone https://github.com/eng1n88r/adaptive-charge
-   cd adaptive-charge/packaging/bin
-   makepkg -si
-   sudo systemctl enable --now adaptive-charge.service
+   curl -fsSL https://raw.githubusercontent.com/eng1n88r/adaptive-charge/master/install.sh | bash
    ```
 
 The plugin is useful at every level of setup:
