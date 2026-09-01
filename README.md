@@ -15,13 +15,15 @@ via a scoped sudoers grant that the daemon's installer sets up.
 
 1. A battery exposing `/sys/class/power_supply/BAT*/charge_control_end_threshold`
    (ThinkPad, ASUS, Framework, …). Without it the daemon has nothing to write.
-2. The [adaptive-charge](https://github.com/eng1n88r/adaptive-charge) daemon:
+2. Optionally, the [adaptive-charge](https://github.com/eng1n88r/adaptive-charge)
+   daemon for full adaptive mode (no Rust toolchain needed - installs the
+   prebuilt release as a pacman package):
 
    ```sh
    git clone https://github.com/eng1n88r/adaptive-charge
-   cd adaptive-charge
-   make build
-   sudo make install
+   cd adaptive-charge/packaging/bin
+   makepkg -si
+   sudo systemctl enable --now adaptive-charge.service
    ```
 
 The plugin is useful at every level of setup:
