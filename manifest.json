@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "adaptive.power",
   "name": "Adaptive Power",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Viktar Hushchynski",
   "description": "Power panel with adaptive battery charging: learns your unplug schedule, holds a charge ceiling, tops up before you leave.",
   "kinds": [
@@ -15,10 +15,10 @@
     "displayName": "Adaptive Power",
     "description": "Power panel with adaptive battery charging: learns your unplug schedule, holds a charge ceiling, tops up before you leave.",
     "category": "System",
-    "allowMultiple": false
+    "allowMultiple": false,
+    "defaultSection": "right"
   },
   "omarchy": {
     "clonedFrom": "omarchy.power"
-  },
-  "license": "MIT"
+  }
 }

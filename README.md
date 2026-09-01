@@ -24,8 +24,9 @@ via a scoped sudoers grant that the daemon's installer sets up.
    sudo make install
    ```
 
-Without the daemon the panel still works as a normal battery widget; the
-adaptive section shows "stopped" and clicks report an error.
+On hardware without kernel charge thresholds the adaptive section hides
+itself and the panel behaves as the stock battery widget. With supported
+hardware but no daemon, the section shows "daemon not installed".
 
 ## Install
 
@@ -34,6 +35,11 @@ If another clone of `omarchy.power` is on the bar, disable or remove it first.
 ```sh
 omarchy plugin add https://github.com/eng1n88r/omarchy-adaptive-power.git --enable
 ```
+
+The widget is placed in the bar's right section; reposition with
+`omarchy bar move adaptive.power --section right` or by editing
+`~/.config/omarchy/shell.json` if the insert position isn't where your
+battery widget used to sit.
 
 ## Remove
 

@@ -120,10 +120,13 @@ Panel {
   property string adaptiveCeiling: ""
   property int holdCeiling: 80
   property string adaptiveBatteryState: ""
+  property bool adaptiveSupported: false
+  property bool adaptiveDaemon: false
   property bool adaptiveError: false
 
   // What adaptive charging is doing right now, in words.
   readonly property string adaptiveStatusText: {
+    if (!adaptiveDaemon) return "daemon not installed - see plugin README"
     if (!adaptiveActive) return "stopped"
     var live = parseInt(adaptiveCeiling, 10)
     if (isNaN(live)) return "holding at " + holdCeiling + "%"
@@ -200,6 +203,8 @@ Panel {
     var hold = parts.length > 2 ? parseInt(parts[2], 10) : NaN
     holdCeiling = isNaN(hold) ? 80 : hold
     adaptiveBatteryState = parts.length > 3 ? parts[3].trim() : ""
+    adaptiveSupported = parts.length > 4 && parts[4].trim() === "yes"
+    adaptiveDaemon = parts.length > 5 && parts[5].trim() === "yes"
   }
 
   function setCeiling(value) {
@@ -271,7 +276,7 @@ Panel {
 
   Process {
     id: adaptiveProc
-    command: ["bash", "-c", "printf '%s\\t%s\\t%s' \"$(systemctl is-active adaptive-charge 2>/dev/null)\" \"$(cat /sys/class/power_supply/BAT*/charge_control_end_threshold 2>/dev/null | head -1)\" \"$(cat /var/lib/adaptive-charge/ceiling 2>/dev/null)\" \"$(cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -1)\""]
+    command: ["bash", "-c", "printf '%s\\t%s\\t%s' \"$(systemctl is-active adaptive-charge 2>/dev/null)\" \"$(cat /sys/class/power_supply/BAT*/charge_control_end_threshold 2>/dev/null | head -1)\" \"$(cat /var/lib/adaptive-charge/ceiling 2>/dev/null)\" \"$(cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -1)\" \"$(ls /sys/class/power_supply/BAT*/charge_control_end_threshold >/dev/null 2>&1 && echo yes || echo no)\" \"$(command -v adaptive-charge >/dev/null 2>&1 && echo yes || echo no)\""]
     stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.updateAdaptive(text) }
   }
 
@@ -560,11 +565,14 @@ Panel {
         }
 
         // ---------- Adaptive charge ----------
+        // Hidden entirely on hardware without kernel charge thresholds.
         PanelSeparator {
+          visible: root.adaptiveSupported
           foreground: root.bar.foreground
         }
 
         Column {
+          visible: root.adaptiveSupported
           width: parent.width
           spacing: Style.space(10)
 
