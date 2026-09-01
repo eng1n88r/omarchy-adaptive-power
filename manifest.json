@@ -19,5 +19,6 @@
   },
   "omarchy": {
     "clonedFrom": "omarchy.power"
-  }
+  },
+  "license": "MIT"
 }

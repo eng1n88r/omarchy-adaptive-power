@@ -50,3 +50,10 @@ Removal puts `omarchy.power` back in the same bar slot.
   inside the band.
 - Tracks the stock `omarchy.power` panel (this is a clone, like other
   replacement power panels); expect occasional rebases after Omarchy updates.
+
+## License
+
+MIT (see LICENSE). Panel code is derived from the stock `omarchy.power`
+plugin (declared via `omarchy.clonedFrom`); the only external dependency is
+the optional [adaptive-charge](https://github.com/eng1n88r/adaptive-charge)
+daemon, also MIT.
