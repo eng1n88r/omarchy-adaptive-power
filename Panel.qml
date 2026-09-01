@@ -292,7 +292,7 @@ Panel {
 
   Process {
     id: adaptiveProc
-    command: ["bash", "-c", "printf '%s\\t%s\\t%s' \"$(systemctl is-active adaptive-charge 2>/dev/null)\" \"$(cat /sys/class/power_supply/BAT*/charge_control_end_threshold 2>/dev/null | head -1)\" \"$(cat /var/lib/adaptive-charge/ceiling 2>/dev/null)\" \"$(cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -1)\" \"$(ls /sys/class/power_supply/BAT*/charge_control_end_threshold >/dev/null 2>&1 && echo yes || echo no)\" \"$(command -v adaptive-charge >/dev/null 2>&1 && echo yes || echo no)\""]
+    command: ["bash", "-c", "printf '%s\\t%s\\t%s\\t%s\\t%s\\t%s' \"$(systemctl is-active adaptive-charge 2>/dev/null)\" \"$(cat /sys/class/power_supply/BAT*/charge_control_end_threshold 2>/dev/null | head -1)\" \"$(cat /var/lib/adaptive-charge/ceiling 2>/dev/null)\" \"$(cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -1)\" \"$(ls /sys/class/power_supply/BAT*/charge_control_end_threshold >/dev/null 2>&1 && echo yes || echo no)\" \"$(command -v adaptive-charge >/dev/null 2>&1 && echo yes || echo no)\""]
     stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.updateAdaptive(text) }
   }
 
