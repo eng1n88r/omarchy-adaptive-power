@@ -122,6 +122,7 @@ Panel {
   property string adaptiveBatteryState: ""
   property bool adaptiveSupported: false
   property bool adaptiveDaemon: false
+  property string adaptiveNode: ""
   property bool adaptiveError: false
 
   // What adaptive charging is doing right now, in words.
@@ -212,6 +213,7 @@ Panel {
     adaptiveBatteryState = parts.length > 3 ? parts[3].trim() : ""
     adaptiveSupported = parts.length > 4 && parts[4].trim() === "yes"
     adaptiveDaemon = parts.length > 5 && parts[5].trim() === "yes"
+    adaptiveNode = parts.length > 6 ? parts[6].trim() : ""
   }
 
   function setCeiling(value) {
@@ -221,10 +223,15 @@ Panel {
     if (adaptiveDaemon) {
       adaptiveToggleProc.command = ["sudo", "-n", "adaptive-charge", "ceiling", String(n)]
     } else {
-      // Standalone mode: write the kernel threshold directly. Omarchy's
-      // polkit agent presents the auth dialog; cancelling is a clean no-op.
+      // Standalone mode: write the kernel threshold directly, to the single
+      // node the probe identified. The path must match the strict sysfs
+      // pattern before it is interpolated into the privileged command.
+      if (!Model.isChargeThresholdPath(adaptiveNode)) {
+        adaptiveError = true
+        return
+      }
       adaptiveToggleProc.command = ["pkexec", "/bin/sh", "-c",
-        "for f in /sys/class/power_supply/BAT*/charge_control_end_threshold; do echo " + n + " > \"$f\"; done"]
+        "echo " + n + " > " + adaptiveNode]
     }
     adaptiveToggleProc.running = true
   }
@@ -292,7 +299,7 @@ Panel {
 
   Process {
     id: adaptiveProc
-    command: ["bash", "-c", "printf '%s\\t%s\\t%s\\t%s\\t%s\\t%s' \"$(systemctl is-active adaptive-charge 2>/dev/null)\" \"$(cat /sys/class/power_supply/BAT*/charge_control_end_threshold 2>/dev/null | head -1)\" \"$(cat /var/lib/adaptive-charge/ceiling 2>/dev/null)\" \"$(cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -1)\" \"$(ls /sys/class/power_supply/BAT*/charge_control_end_threshold >/dev/null 2>&1 && echo yes || echo no)\" \"$(command -v adaptive-charge >/dev/null 2>&1 && echo yes || echo no)\""]
+    command: ["bash", "-c", "printf '%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s' \"$(systemctl is-active adaptive-charge 2>/dev/null)\" \"$(cat /sys/class/power_supply/BAT*/charge_control_end_threshold 2>/dev/null | head -1)\" \"$(cat /var/lib/adaptive-charge/ceiling 2>/dev/null)\" \"$(cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -1)\" \"$(ls /sys/class/power_supply/BAT*/charge_control_end_threshold >/dev/null 2>&1 && echo yes || echo no)\" \"$(command -v adaptive-charge >/dev/null 2>&1 && echo yes || echo no)\" \"$(ls /sys/class/power_supply/BAT*/charge_control_end_threshold 2>/dev/null | head -1)\""]
     stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.updateAdaptive(text) }
   }
 
@@ -302,6 +309,22 @@ Panel {
       root.adaptiveError = exitCode !== 0
       root.refresh()
     }
+  }
+
+  // Deadlines: no privileged or probe job may hang the panel indefinitely.
+  Timer {
+    running: adaptiveToggleProc.running
+    interval: 30000
+    onTriggered: {
+      adaptiveToggleProc.running = false
+      root.adaptiveError = true
+    }
+  }
+
+  Timer {
+    running: adaptiveProc.running
+    interval: 10000
+    onTriggered: adaptiveProc.running = false
   }
 
   Timer { interval: 5000; running: root.opened; repeat: true; onTriggered: root.refresh() }

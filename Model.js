@@ -102,3 +102,9 @@ if (typeof module !== "undefined") {
     modeLabel: modeLabel
   }
 }
+
+// Strict allow-list for the one sysfs node standalone mode may write.
+// Anything else is rejected before it reaches a privileged command.
+function isChargeThresholdPath(path) {
+  return /^\/sys\/class\/power_supply\/BAT[A-Za-z0-9._-]+\/charge_control_end_threshold$/.test(String(path || ""))
+}
